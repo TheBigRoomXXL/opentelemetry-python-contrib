@@ -92,6 +92,10 @@ libraries = {
         "library": "kafka-python >= 2.0",
         "instrumentation": "opentelemetry-instrumentation-kafka-python==0.40b0.dev",
     },
+    "marshmallow": {
+        "library": "marshmallow ~= 3.19.0",
+        "instrumentation": "opentelemetry-instrumentation-marshmalow==0.40b0.dev",
+    },
     "mysql-connector-python": {
         "library": "mysql-connector-python ~= 8.0",
         "instrumentation": "opentelemetry-instrumentation-mysql==0.40b0.dev",
