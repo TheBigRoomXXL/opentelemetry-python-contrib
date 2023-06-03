@@ -30,6 +30,7 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 class MarshmallowInstrumentor(BaseInstrumentor):
+
     def instrumentation_dependencies(self) -> Collection[str]:
         return _instruments
 
@@ -47,6 +48,8 @@ class MarshmallowInstrumentor(BaseInstrumentor):
         self._instrumented_schemas.append((schema, deepcopy(schema)))
         schema.load = self._traced(schema.load)
         schema.dump = self._traced(schema.dump)
+        schema.loads = self._traced(schema.loads)
+        schema.dumps = self._traced(schema.dumps)
         schema.validate = self._traced(schema.validate)
 
     def _instrument_decorators(self) -> Callable[P, R]:
@@ -64,15 +67,16 @@ class MarshmallowInstrumentor(BaseInstrumentor):
 
         @wraps(func)
         def method_with_tracing(_self: Schema, *args: P.args, **kwargs: P.kwargs) -> R:
-            with self.tracer.start_as_current_span(
+            with self._tracer.start_as_current_span(
                 func.__name__, set_status_on_exception=False
             ) as span:
-                span.set_attribute("schema", _self.__class__.__name__)
-                span.set_attribute("schema.fields", str(list(_self.fields)))
-                span.set_attribute("schema.many", _self.many)
-                span.set_attribute("schema.partial", _self.partial)
-                span.set_attribute("schema.unknown", _self.unknown)
-                span.set_attribute("schema.ordered", _self.ordered)
+                if span.is_recording():
+                    span.set_attribute("schema", _self.__class__.__name__)
+                    span.set_attribute("schema.fields", str(list(_self.fields)))
+                    span.set_attribute("schema.many", _self.many)
+                    span.set_attribute("schema.partial", _self.partial)
+                    span.set_attribute("schema.unknown", _self.unknown)
+                    span.set_attribute("schema.ordered", _self.ordered)
 
                 result = func(_self, *args, **kwargs)
                 return result
